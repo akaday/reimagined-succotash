@@ -19,7 +19,10 @@ export async function startDataServer(ssl: boolean) {
       const { delay }: { delay: string } = req.query;
       if (delay) {
         /** get the number to pause 0 and invalid numbers will be 100 instead */
-        const pause = parseInt(delay, 10) || 100;
+        let pause = parseInt(delay, 10) || 100;
+        if (pause > 1000) {
+          pause = 1000;
+        }
         return setTimeout(next, pause);
       }
       next();
