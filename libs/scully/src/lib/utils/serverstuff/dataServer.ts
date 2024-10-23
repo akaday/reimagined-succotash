@@ -1,6 +1,7 @@
 import { logOk, yellow } from '../';
 import { posts, users } from '../../testData';
 import { readDotProperty } from '../scullydot';
+import escapeHtml from 'escape-html';
 
 const express = require('express');
 
@@ -72,7 +73,7 @@ export async function startDataServer(ssl: boolean) {
     });
     dataServer.get('/*', (req, res) => {
       res.status(404);
-      res.send(`<h1>404 - ${req.url}</h1>`);
+      res.send(`<h1>404 - ${escapeHtml(req.url)}</h1>`);
     });
     return dataServer.listen(8200, hostName, (x) => {
       logOk(`Started Test data server on "${yellow(`http://${hostName}:${8200}/`)}" `);
