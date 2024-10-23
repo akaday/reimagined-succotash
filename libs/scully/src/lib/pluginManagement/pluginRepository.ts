@@ -54,6 +54,9 @@ export const registerPlugin = <T extends keyof PluginFuncs>(
   if (typeof name === 'symbol') {
     logWarn(`${displayName} is a Symbol. Using those is deprecated. use "const x = 'myId' as const" instead`);
   }
+  if (!pluginTypes.includes(type)) {
+    throw new Error(`Invalid plugin type: ${type}`);
+  }
   switch (type) {
     case 'fileHandler':
       plugin[AlternateExtensionsForFilePlugin] = Array.isArray(pluginOptions) ? pluginOptions : [];
