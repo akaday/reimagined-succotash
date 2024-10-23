@@ -119,7 +119,8 @@
     "selfsigned": "^2.0.0",
     "semver": "^7.3.5",
     "ws": "^8.5.0",
-    "zone.js": "0.11.4"
+    "zone.js": "0.11.4",
+    "sanitize-html": "^2.13.1"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "18.2.9",

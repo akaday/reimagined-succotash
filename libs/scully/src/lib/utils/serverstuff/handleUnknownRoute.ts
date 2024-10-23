@@ -9,6 +9,7 @@ import { handle404 } from '../cli-options';
 import { logError, logWarn, yellow } from '../log';
 import { readAllDotProps } from '../scullydot';
 import { title404 } from './title404';
+import escape from 'escape-html';
 
 const scullyConfig = readAllDotProps();
 
@@ -58,7 +59,7 @@ export const handleUnknownRoute: RequestHandler = async (req, res, next) => {
     res.status(404);
     return res.send(`
         <h1>${title404}</h1>
-        <p>The url "${req.url}" is not provided in the scully.routes.json, so it can't be generated</p>
+        <p>The url "${escape(req.url)}" is not provided in the scully.routes.json, so it can't be generated</p>
         <p>If you have routes that are not known before  you might want to serve index.html instead of this response. <br> That can be done by adding the '--404=index' option to the Scully command
         <script>
           /** triggering page ready, as there is no need to wait for a timeout */
