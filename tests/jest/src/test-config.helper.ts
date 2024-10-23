@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import sanitizeHtml from 'sanitize-html';
 
 const SCULLY_STATE_START = `/** ___SCULLY_STATE_START___ */`;
 const SCULLY_STATE_END = `/** ___SCULLY_STATE_END___ */`;
@@ -25,28 +26,10 @@ export const configureTests = (configure: ConfigureFn, compilerOptions: Compiler
 };
 
 export const replaceIndexNG = (index: string) => {
-  let previous;
-  do {
-    previous = index;
-    index = index
-      /** take out meta tag */
-      .replace(/ content=[\"\']Scully(.*)[\"\']/g, '')
-      /** take out scully version from body tag */
-      .replace(/scully-version=[\"\'](.*)[\"\']/gi, '')
-      /** take out ngContent and ngHost attributes */
-      .replace(/\_ng(content|host)([\-A-Za-z0-9]*)/g, '')
-      /** take out ng-version attribute */
-      .replace(/ng\-version\=\".{5,30}\"/g, '')
-      /** take out all script tags... DEBATABLE!!! */
-      .replace(/<script[\d\D]*?>[\d\D]*?<\/script>/gi, '')
-      /** take out all styles (they differ between renderers) */
-      .replace(/<style(?:.*)<\/style>/gis, '')
-      /** take out ng-transition styles */
-      // .replace(/<style.?ng-transition(?:.*)<\/style>/gis, '')
-      /** take out sourcemaps */
-      .replace(/\/\*# sourceMappingURL.*\*\//g, '');
-  } while (index !== previous);
-  return index;
+  return sanitizeHtml(index, {
+    allowedTags: [],
+    allowedAttributes: {},
+  });
 };
 
 export const extractTransferState = (index: string) => {

@@ -132,9 +132,14 @@ function injectReloadMiddleware(req, res, next) {
     } else {
       path = join(dotProps.outDir, url);
     }
-    // console.log(path);
-    if (existFolder(path)) {
-      const content = readFileSync(path, 'utf8').toString();
+    // Normalize and validate the path
+    const normalizedPath = path.resolve(path);
+    if (!normalizedPath.startsWith(path.resolve(dotProps.outDir))) {
+      res.statusCode = 403;
+      return res.end();
+    }
+    if (existFolder(normalizedPath)) {
+      const content = readFileSync(normalizedPath, 'utf8').toString();
       try {
         const [start, endPart] = content.split('</body>');
         const injected = start + createScript() + '</body>' + endPart;

@@ -25,7 +25,6 @@ export function httpJson<T>(
   // You can ignore the warning (TLS) or run scully with --no-warning
   // ****************************************************************************************`);
   //   }
-  process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '0';
   const request = isSSL ? httpsRequest : httpRequest;
   return new Promise((resolve, reject) => {
     const { pathname, hostname, port, protocol, search, hash } = new URL(url);

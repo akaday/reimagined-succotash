@@ -125,7 +125,7 @@ function pushItemsToArray(src, dest) {
 
 function fetchCleanedOpenTag(str: string, arr: string[]): string {
   return str
-    .replace('>', ' >')
+    .replace(/>/g, ' >')
     .split(' ')
     .reduce((acc, attr) => {
       // Does the html attr exist in the blacklisted attrs

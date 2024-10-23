@@ -1,4 +1,4 @@
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { existsSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { filter, merge, tap } from 'rxjs';
@@ -12,7 +12,6 @@ import { Deferred } from './deferred';
 import { initSpSPool, SPSRenderer } from './serverPlatformRender';
 
 const workerPath = join(__dirname, 'ps-worker.js');
-
 const tsConfig = {
   extends: '../tsconfig.json',
   compilerOptions: {
@@ -35,10 +34,8 @@ const tsConfig = {
 };
 
 const plugin = async () => {
-  /** check if I'm a worker, and import the runner. */
   if (process.env.SCULLY_WORKER === 'true') {
     process.title = 'ScullyWorker';
-    /** worker will pick up its in a worker and starts itself */
     const worker = await import('./ps-worker').catch((e) => {
       console.log('worker module load error', e);
       logError(e);
@@ -61,42 +58,27 @@ const plugin = async () => {
     const tsConfigPath = join(scullyPath, `tsconfig.${scullyConfig.projectName}.json`);
     const modulePath = fullSps.replace(homeFolder, '..');
     if (!existsSync(tsConfigPath)) {
-      // tsConfig.compilerOptions.outDir = outDir;
       tsConfig.files.push(modulePath);
       writeFileSync(tsConfigPath, JSON.stringify(tsConfig, null, 2));
       log(`  ${green('✔')} created ${yellow(tsConfigPath)}`);
     }
     printProgress(true, 'compiling application');
     rmSync(outDir, { recursive: true, force: true });
-    await runScript(`npx ngc -p "${tsConfigPath}"`).catch(() => {
+
+    await runScript(['npx', 'ngc', '-p', tsConfigPath]).catch(() => {
       logError(`Couldn't compile ${yellow(modulePath)}. Please fix the above errors in the app, and run Scully again.`);
       process.exit(0);
     });
+
     log(`  ${green('✔')} Angular application compiled successfully`);
     printProgress(false, 'starting workers');
     await startPSRunner();
-
-    // process.exit(0);
   }
 };
 
-/**
- * Set up the Scully Platform Server render
- */
-export function enableSPS() {
-  /** do the setup (compile angular app etc) */
-  registerPlugin('beforeAll', 'compileAngularApp', plugin);
-  /** replace the render plugin with the SPS specific render plugin */
-  registerPlugin('scullySystem', renderPlugin, findPlugin(SPSRenderer), undefined, { replaceExistingPlugin: true });
-  /** register dummy routeRenderer, to prevent loading PPT by default */
-  registerPlugin('scullySystem', routeRenderer, async () => undefined);
-  /** make sure tear-down of the workers happens */
-  registerPlugin('allDone', 'exitAllWorkers', terminateAllPools);
-}
-
-async function runScript(cmd: string) {
+async function runScript(args) {
   return new Promise((resolve, reject) => {
-    exec(cmd, (err, stdout, stderr) => {
+    execFile(args[0], args.slice(1), (err, stdout, stderr) => {
       if (err) {
         log(stderr);
         reject(err);
@@ -114,20 +96,18 @@ async function startPSRunner() {
   };
   await findPlugin(initSpSPool)(workerPath);
   const pool = getPool(workerPath);
-
   getHandledRoutes().then((routes) => {
-    // every worker needs a copy od the HanderRoutes[]
     const sendRoutes = pool.map(() => new Job('setHandledRoutes', routes));
     return handleJobs(sendRoutes, pool);
   });
   const cache = new Map<string, Deferred<any>>();
   setupCacheListener();
+
   async function setupCacheListener() {
     try {
       await loadConfig();
       const listenAll$ = merge(...pool.map((w) => w.messages$));
       const listenCache$ = listenAll$.pipe(filter(({ msg }) => Array.isArray(msg) && msg[0].startsWith('cache')));
-
       const idChecks$ = listenCache$.pipe(
         filter(({ msg }) => msg[0] === 'cacheHas'),
         tap(({ worker, msg }) => {
@@ -149,7 +129,6 @@ async function startPSRunner() {
             });
         })
       );
-
       const idSetCacheItems$ = listenCache$.pipe(
         filter(({ msg }) => msg[0] === 'cacheSet'),
         tap(({ worker, msg }) => {
@@ -158,14 +137,16 @@ async function startPSRunner() {
           deferred.resolve(response);
         })
       );
-
-      merge(idChecks$, idSetCacheItems$).subscribe({
-        next({ worker, msg }) {
-          // console.log('hm', msg, worker.id);
-        },
-      });
+      merge(idChecks$, idSetCacheItems$).subscribe({ next({ worker, msg }) {} });
     } catch (e) {
       console.log('here', e);
     }
   }
+}
+
+export function enableSPS() {
+  registerPlugin('beforeAll', 'compileAngularApp', plugin);
+  registerPlugin('scullySystem', renderPlugin, findPlugin(SPSRenderer), undefined, { replaceExistingPlugin: true });
+  registerPlugin('scullySystem', routeRenderer, async () => undefined);
+  registerPlugin('allDone', 'exitAllWorkers', terminateAllPools);
 }
