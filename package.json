@@ -102,7 +102,7 @@
     "compression": "^1.7.4",
     "core-js": "^3.21.1",
     "cors": "^2.8.5",
-    "critical": "^4.0.1",
+    "critical": "^7.2.1",
     "critters": "^0.0.16",
     "cz-customizable": "^6.3.0",
     "express": "4.21.1",
